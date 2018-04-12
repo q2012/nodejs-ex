@@ -3,9 +3,9 @@ var express = require('express'),
     app     = express();
 
 var port = process.env.PORT || process.env.OPENSHIFT_NODEJS_PORT || 8080,
-    ip   = process.env.IP   || process.env.OPENSHIFT_NODEJS_IP || '0.0.0.0';
+    ip   = process.env.IP   || process.env.OPENSHIFT_NODEJS_IP || '0.0.0.0',
 
-var opened = 0,
+    opened = 0,
     init = 0,
     state = 0,
     battery = 0,
@@ -37,10 +37,10 @@ app.get('/', function (req, res) {
   else
     resp += "Opened: " + state + " Battery: " + battery;
 
-  resp.setHeader('Access-Control-Allow-Origin','*');
-  resp.setHeader('Access-Control-Allow-Methods','GET,POST,OPTIONS,PUT,PATCH,DELETE');
+  res.setHeader('Access-Control-Allow-Origin','*');
+  res.setHeader('Access-Control-Allow-Methods','GET,POST,OPTIONS,PUT,PATCH,DELETE');
 
-  resp.setHeader('Access-Control-Allow-Headers','Origin, X-Requested-With, Content-Type, Accept');
+  res.setHeader('Access-Control-Allow-Headers','Origin, X-Requested-With, Content-Type, Accept');
   res.send(resp);
 
   console.log(resp);
