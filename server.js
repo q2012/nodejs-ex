@@ -25,12 +25,8 @@ app.get('/', function (req, res) {
 
   if(req.query.get)
   {
-    if(set != 0)
-    {
-      resp += "\b";
-      set = 0;
-    }
-    resp += doopen + init;
+    resp += set + doopen + init;
+    set = 0;
   }
   else if(req.query.set)
     set = 1;
