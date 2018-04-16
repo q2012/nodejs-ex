@@ -5,7 +5,7 @@ var express = require('express'),
 var port = process.env.PORT || process.env.OPENSHIFT_NODEJS_PORT || 8080,
     ip   = process.env.IP   || process.env.OPENSHIFT_NODEJS_IP || '0.0.0.0',
 
-    opened = 0,
+    doopen = 0,
     init = 0,
     state = 0,
     battery = 0,
@@ -14,28 +14,28 @@ var port = process.env.PORT || process.env.OPENSHIFT_NODEJS_PORT || 8080,
 app.get('/', function (req, res) {
   var resp = "\b";
 
-  if(undefined != req.query.opened)
-    opened = req.query.opened;
-  if(undefined != req.query.init)
+  if(req.query.doopen)
+    doopen = req.query.doopen;
+  if(req.query.init)
     init = req.query.init;
-  if(undefined != req.query.state)
+  if(req.query.state)
     state = req.query.state;
-  if(undefined != req.query.battery)
-    battery = req.query.battery;
+  if(req.query.battery)
+    req.query.battery;
 
   if(req.query.get)
   {
-    if(state != 0)
+    if(set != 0)
     {
       resp += "\b";
-      state = 0;
+      set = 0;
     }
-    resp += opened + init;
+    resp += doopen + init;
   }
   else if(req.query.set)
-    state = 1;
+    set = 1;
   else
-    resp += "Opened: " + state + " Battery: " + battery;
+    resp += "State: " + state + " Battery: " + battery + " Init: " + init + " Doopen: " + doopen + " Set: " + set;
 
   res.setHeader('Access-Control-Allow-Origin','*');
   res.setHeader('Access-Control-Allow-Methods','GET,POST,OPTIONS,PUT,PATCH,DELETE');
