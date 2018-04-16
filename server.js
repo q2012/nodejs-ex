@@ -21,7 +21,7 @@ app.get('/', function (req, res) {
   if(req.query.state)
     state = req.query.state;
   if(req.query.battery)
-    req.query.battery;
+    battery = req.query.battery;
 
   if(req.query.get)
   {
