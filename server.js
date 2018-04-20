@@ -42,6 +42,37 @@ app.get('/', function (req, res) {
   console.log(resp);
 });
 
+app.get('/alexa', function (req, res) {
+  var resp = "\b";
+
+  if(req.query.doopen)
+    doopen = req.query.doopen;
+  if(req.query.init)
+    init = req.query.init;
+  if(req.query.state)
+    state = req.query.state;
+  if(req.query.battery)
+    battery = req.query.battery;
+
+  if(req.query.get)
+  {
+    resp += set + doopen + init;
+    set = 0;
+  }
+  else if(req.query.set)
+    set = 1;
+  else
+    resp += "State: " + state + " Battery: " + battery + " Init: " + init + " Doopen: " + doopen + " Set: " + set;
+
+  res.setHeader('Access-Control-Allow-Origin','*');
+  res.setHeader('Access-Control-Allow-Methods','GET,POST,OPTIONS,PUT,PATCH,DELETE');
+
+  res.setHeader('Access-Control-Allow-Headers','Origin, X-Requested-With, Content-Type, Accept');
+  res.send(resp);
+
+  console.log(resp);
+});
+
 // error handling
 app.use(function(err, req, res, next){
   console.error(err.stack);
