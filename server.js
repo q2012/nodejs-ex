@@ -57,11 +57,9 @@ let hubs = [];
 let locks = [];
 
 app.get('/test-data', function(req,res) {
-  if(!first)
-  {
-    res.send('Already created');
-    return;
-  }  
+  users = [];
+  locks = [];
+  hubs = [];
 
   users.push(new User('1'));
   users.push(new User('2'));
