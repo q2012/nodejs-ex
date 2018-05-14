@@ -5,7 +5,7 @@ var express = require('express'),
     const bodyParser = require("body-parser");
 
 var port = process.env.PORT || process.env.OPENSHIFT_NODEJS_PORT || 8080,
-    ip   = process.env.IP   || process.env.OPENSHIFT_NODEJS_IP || 'localhost';
+    ip   = process.env.IP   || process.env.OPENSHIFT_NODEJS_IP || '0.0.0.0';
 
 let first = true;
 
@@ -247,10 +247,11 @@ app.post('/alexa',function(req,res) {
       }
       else if(req.body.setMode == MODE.fitness)
         lock.mode = MODE.fitness;
-      
+
       res.send(JSON.stringify({"succ": true, "state": lock.state, "curTime": lock.time, "battery": lock.battery}));
       return;
     }
+
   }
 });
 
