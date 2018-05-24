@@ -5,7 +5,7 @@ var express = require('express'),
     const bodyParser = require("body-parser");
 
 var port = process.env.PORT || process.env.OPENSHIFT_NODEJS_PORT || 8080,
-    ip   = process.env.IP   || process.env.OPENSHIFT_NODEJS_IP || '0.0.0.0';
+    ip   = process.env.IP   || process.env.OPENSHIFT_NODEJS_IP || 'localhost';
 
 let first = true;
 
@@ -47,7 +47,8 @@ function Hub(hubID,hubName) {
   this.locks = [];
 }
 
-function User(amazonUID) {
+function User(userID, amazonUID) {
+  this.userID = userID;
   this.amazonUID = amazonUID;
   this.hubs = [];
 }
@@ -61,10 +62,10 @@ app.get('/test-data', function(req,res) {
   locks = [];
   hubs = [];
 
-  users.push(new User('1'));
-  users.push(new User('2'));
-  users.push(new User('3'));
-  users.push(new User('4'));
+  users.push(new User('1', '1'));
+  users.push(new User('2', '2'));
+  users.push(new User('3', '3'));
+  users.push(new User('4', '4'));
 
   hubs.push(new Hub('1','First'));
   hubs.push(new Hub('2','Second'));
@@ -104,9 +105,16 @@ app.get('/test-data', function(req,res) {
   res.sendStatus(201);
 });
 
+
+
 app.get('/hub', function(req, res) {
   if(req.query.id && hubs[req.query.id])
   {
+    req.query.hubName?hubs[req.query.id].hubName = req.query.hubName:hubs[req.query.id].hubName;
+    req.query.hubID?hubs[req.query.id].hubID = req.query.hubID:hubs[req.query.id].hubID;
+    res.send(JSON.stringify(hubs[req.query.id]));
+
+
     res.send(JSON.stringify(hubs[req.query.id]));
     return;
   }
@@ -116,6 +124,27 @@ app.get('/hub', function(req, res) {
 app.get('/lock', function(req, res) {
   if(req.query.id && locks[req.query.id])
   {
+    req.query.lockID?locks[req.query.id].lockID = req.query.lockID:locks[req.query.id].lockID;
+    req.query.lockName?locks[req.query.id].lockName = req.query.lockName:locks[req.query.id].lockName;
+    req.query.state?locks[req.query.id].state = req.query.state:locks[req.query.id].state;
+    req.query.setOpen?locks[req.query.id].setOpen = req.query.setOpen:locks[req.query.id].setOpen;
+    req.query.mode?locks[req.query.id].mode = req.query.mode:locks[req.query.id].mode;
+    req.query.PIN?locks[req.query.id].PIN = req.query.PIN:locks[req.query.id].PIN;
+    req.query.shift?locks[req.query.id].shift = req.query.shift:locks[req.query.id].shift
+
+    if(req.query.setOpenTime)
+      locks[req.query.id].setOpenTime.setTime(req.query.setOpenTime);
+    if(req.query.setCloseTime)
+      locks[req.query.id].setCloseTime.setTime(req.query.setCloseTime);
+    if(req.query.setTime)
+      locks[req.query.id].setTime.setTime(req.query.setTime);
+    if(req.query.time)
+      locks[req.query.id].time.setTime(req.query.time);
+
+    req.query.battery?locks[req.query.id].battery = req.query.battery:locks[req.query.id].battery;
+    req.query.signal?locks[req.query.id].signal = req.query.signal:locks[req.query.id].signal;
+
+
     res.send(JSON.stringify(locks[req.query.id]));
     return;
   }
@@ -125,14 +154,21 @@ app.get('/lock', function(req, res) {
 app.get('/user', function(req, res) {
   if(req.query.id && users[req.query.id])
   {
+    req.query.userID?users[req.query.id].userID = req.query.userID:users[req.query.id].userID;
+    req.query.amazonUID?users[req.query.id].amazonUID = req.query.amazonUID:users[req.query.id].amazonUID;
     res.send(JSON.stringify(users[req.query.id]));
     return;
   }
   res.sendStatus(404);
 });
 
+
+
+
+
+
 app.post('/hub', function(req,res) {
-    if(req.body.id && hubs[req.query.id])
+    if(req.body.id && hubs[req.body.id])
     {
       req.body.hubName?hubs[req.body.id].hubName = req.body.hubName:hubs[req.body.id].hubName;
       req.body.hubID?hubs[req.body.id].hubID = req.body.hubID:hubs[req.body.id].hubID;
@@ -143,7 +179,8 @@ app.post('/hub', function(req,res) {
 });
 
 app.post('/user', function(req,res) {
-    if(req.body.id && hubs[req.query.id])
+  console.log(req.body.id + " " + users[req.body.id]);
+    if(req.body.id && users[req.body.id])
     {
       req.body.amazonUID?users[req.body.id].amazonUID = req.body.amazonUID:users[req.body.id].amazonUID;
       res.send(JSON.stringify(users[req.body.id]));
@@ -220,9 +257,19 @@ app.post('/alexa',function(req,res) {
             return;
           }
         }
+        else if(!req.body.answer)
+        {
+          res.send({"succ": false, "message": "No answer", "question": lock.qa[lock.curQuestion].key});
+          return;
+        }
+        else if(!(req.body.answer == lock.qa[lock.curQuestion].val))
+        {
+          res.send({"succ": false, "message": "Wrong answer", "question": lock.qa[lock.curQuestion].key});
+          return;
+        }
         else
         {
-          res.send({"succ": false, "message": "Wrong or no answer", "question": lock.qa[lock.curQuestion].key});
+          res.send({"succ": false, "message": "Something wrong. Try again.", "question": lock.qa[lock.curQuestion].key});
           return;
         }
       }
@@ -259,13 +306,22 @@ app.post('/alexa',function(req,res) {
     }
     else if(lock.mode = MODE.family)
     {
-      if(((new Date().getTime() - lock.shift) > lock.setCloseTime.getTime() || (new Date().getTime() - lock.shift) < lock.setOpenTime.getTime())
-             && (!req.body.PIN || req.body.PIN != lock.PIN))
+      if((new Date().getTime() - lock.shift) > lock.setCloseTime.getTime() || (new Date().getTime() - lock.shift) < lock.setOpenTime.getTime())
       {
-        res.send({"succ": false, "message": "Wrong or no PIN"});
+        if(!req.body.PIN)
+        {
+          res.send({"succ": false, "message": "No PIN"});
+          return;
+        }
+        else if(req.body.PIN != lock.PIN)
+        {
+          res.send({"succ": false, "message": "Wrong PIN"});
+          return;
+        }
+        res.send({"succ": false, "message": "Something wrong."});
         return;
       }
-
+      
       if(req.body.time)
       {
         lock.setTime.setTime(req.body.time);
@@ -296,9 +352,10 @@ app.post('/alexa',function(req,res) {
     }
     else if(lock.mode = MODE.biohack)
     {
-      if((new Date().getTime() - lock.shift) > lock.setCloseTime.getTime() || (new Date().getTime() - lock.shift) < lock.setOpenTime.getTime())
+      let curTime = new Date().getTime();
+      if((curTime - lock.shift) > lock.setCloseTime.getTime() || (curTime - lock.shift) < lock.setOpenTime.getTime())
       {
-        res.send({"succ": false, "message": "Not in time"});
+        res.send({"succ": false, "message": "Not in time", "closeTime": lock.setCloseTime.getTime(), "openTime": lock.setOpenTime.getTime(), "curServTime": new Date().get});
         return;
       }
 
@@ -328,7 +385,6 @@ app.post('/alexa',function(req,res) {
       }
 
       res.send(JSON.stringify({"succ": true, "state": lock.state, "curTime": lock.time, "battery": lock.battery}));
-
     }
 
   }
@@ -337,6 +393,8 @@ app.post('/alexa',function(req,res) {
 
 app.get('/', function (req, res) {
   var resp = "\b";
+
+  
 
   res.setHeader('Access-Control-Allow-Origin','*');
   res.setHeader('Access-Control-Allow-Methods','GET,POST,OPTIONS,PUT,PATCH,DELETE');
